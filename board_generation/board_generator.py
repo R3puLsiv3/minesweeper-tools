@@ -1,3 +1,4 @@
+from board import Board
 from closed_board import ClosedBoard
 from opened_board import OpenedBoard
 from no_guess_board import NoGuessBoard

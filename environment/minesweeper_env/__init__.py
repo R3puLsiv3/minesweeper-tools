@@ -1,0 +1,1 @@
+from environment.minesweeper_env.envs import EnvClosedBoardMinesweeper, EnvOpenBoardMinesweeper
