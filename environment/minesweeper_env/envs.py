@@ -5,7 +5,6 @@ from gymnasium.core import ObsType
 from gymnasium.spaces import Discrete
 
 
-# https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/blob/master/docs/modules/ppo_mask.rst
 class EnvOpenBoardMinesweeper(gym.Env):
     metadata: dict[str, list[str]] = {"render_modes": ["human"]}
 
@@ -17,7 +16,6 @@ class EnvOpenBoardMinesweeper(gym.Env):
 
         self.actions: int = self.width * self.height
 
-        # The entire board is observed at every step, but actions get masked as they become unavailable.
         self.action_space: Discrete = Discrete(self.actions)
         self.observation_space: Discrete = Discrete(self.actions)
 

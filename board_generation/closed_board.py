@@ -1,12 +1,16 @@
-from board import Board
+from board_generation.board import Board
 import numpy as np
 from numpy.typing import NDArray
 
 
 class ClosedBoard(Board):
+    """
+    A closed board is a board which has no revealed cells. The player may hit a mine on their first click which is
+    usually not considered to be enjoyable from a gameplay perspective.
+    """
 
-    def __init__(self, size: tuple[int, int], amount_mines: int):
-        super().__init__(size=size, amount_mines=amount_mines)
+    def __init__(self, width: int, height: int, amount_mines: int):
+        super().__init__(width=width, height=height, amount_mines=amount_mines)
         mine_indexes: list[tuple[np.int64, np.int64]] = self.__place_mines()
         self._adjust_numbers(mine_indexes=mine_indexes)
 
@@ -20,6 +24,16 @@ class ClosedBoard(Board):
         mine_indexes: list[tuple[np.int64, np.int64]] = []
         for num in sample:
             index: tuple[np.int64, np.int64] = num // self.height, num % self.width
-            self.board[index] = -1
+            x, y = index
+            self.board[x][y].value = -1
+            self.board[x][y].is_mine = True
             mine_indexes.append(index)
         return mine_indexes
+
+    def __repr__(self) -> str:
+        return f"Board(width={self.width}, height={self.height}, amount_mines={self.amount_mines})"
+
+    def __str__(self) -> str:
+        board_str: str = np.array2string(
+            np.asarray([[self.board[x][y].value for y in range(self.height)] for x in range(self.width)]))
+        return f"Width = {self.width} | Height = {self.height} | Amount of mines = {self.amount_mines}\n{board_str}"
