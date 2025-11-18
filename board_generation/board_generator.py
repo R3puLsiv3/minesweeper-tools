@@ -12,7 +12,7 @@ class BoardTypes(Enum):
 
 
 def generate_board(width: int, height: int, amount_mines: int, board_type: BoardTypes = BoardTypes.CLOSED,
-                   start_cell: tuple[int, int] = (0, 0)) -> Board:
+                   start_cell: tuple[int, int] = (0, 0)) -> ClosedBoard | OpenedBoard | NoGuessBoard:
     match board_type:
         case BoardTypes.CLOSED:
             return ClosedBoard(width=width, height=height, amount_mines=amount_mines)

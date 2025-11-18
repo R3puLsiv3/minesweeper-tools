@@ -14,7 +14,7 @@ class BoardModel:
         return (row, col) in self.revealed
 
     def click(self, row: int, col: int):
-        number = self.board.board[row, col]
+        number = self.board.cells[row, col]
         if number == -1:
             self.mine_clicked = True
         self.revealed[row, col] = number
@@ -30,7 +30,7 @@ class BoardModel:
                 neighbor_row, neighbor_col = row + row_offset, col + col_offset
                 if (0 <= neighbor_row < self.board.height and 0 <= neighbor_col < self.board.width and
                         (neighbor_row, neighbor_col) not in self.revealed):
-                    number = self.board.board[neighbor_row, neighbor_col]
+                    number = self.board.cells[neighbor_row, neighbor_col]
                     if number != -1:
                         self.revealed[(neighbor_row, neighbor_col)] = number
                     if number == 0:

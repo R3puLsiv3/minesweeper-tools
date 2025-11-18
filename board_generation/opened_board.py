@@ -13,11 +13,11 @@ class OpenedBoard(Board):
         super().__init__(width=width, height=height, amount_mines=amount_mines)
         self.start_cell: tuple[int, int] = start_cell
         self.start_x, self.start_y = self.start_cell
-        self.board[self.start_x][self.start_y].revealed = True
-        mine_indexes: list[tuple[np.int64, np.int64]] = self.__place_mines()
+        self.get_cell(self.start_x, self.start_y).revealed = True
+        mine_indexes: list[tuple[int, int]] = self.__place_mines()
         self._adjust_numbers(mine_indexes=mine_indexes)
 
-    def __place_mines(self) -> list[tuple[np.int64, np.int64]]:
+    def __place_mines(self) -> list[tuple[int, int]]:
         """
         Chooses mine positions of the required amount by sampling randomly from a uniform distribution and places the
         mines on the board at those positions while avoiding the open start cell.
@@ -25,12 +25,12 @@ class OpenedBoard(Board):
         low: int = self.start_x + self.start_y * self.width + 1
         high: int = low + self.amount_cells - 1
         sample: NDArray[np.int64] = self._rng.choice(a=range(low, high), size=self.amount_mines, replace=False)
-        mine_indexes: list[tuple[np.int64, np.int64]] = []
+        mine_indexes: list[tuple[int, int]] = []
         for num in sample:
-            index: tuple[np.int64, np.int64] = (num // self.height) % self.height, num % self.width
+            index: tuple[int, int] = (num % self.width).item(), ((num // self.width) % self.height).item()
             x, y = index
-            self.board[x][y].value = -1
-            self.board[x][y].is_mine = True
+            self.get_cell(x, y).value = -1
+            self.get_cell(x, y).is_mine = True
             mine_indexes.append(index)
         return mine_indexes
 
@@ -39,5 +39,5 @@ class OpenedBoard(Board):
 
     def __str__(self) -> str:
         board_str: str = np.array2string(
-            np.asarray([[self.board[x][y].value for y in range(self.height)] for x in range(self.width)]))
+            np.asarray([[self.get_cell(x, y).value for x in range(self.width)] for y in range(self.height)]))
         return f"Width = {self.width} | Height = {self.height} | Amount of mines = {self.amount_mines} | Start cell = {self.start_cell}\n{board_str}"

@@ -11,22 +11,22 @@ class ClosedBoard(Board):
 
     def __init__(self, width: int, height: int, amount_mines: int):
         super().__init__(width=width, height=height, amount_mines=amount_mines)
-        mine_indexes: list[tuple[np.int64, np.int64]] = self.__place_mines()
+        mine_indexes: list[tuple[int, int]] = self.__place_mines()
         self._adjust_numbers(mine_indexes=mine_indexes)
 
-    def __place_mines(self) -> list[tuple[np.int64, np.int64]]:
+    def __place_mines(self) -> list[tuple[int, int]]:
         """
         Chooses mine positions of the required amount by sampling randomly from a uniform distribution and places the
         mines on the board at those positions.
         """
         sample: NDArray[np.int64] = self._rng.choice(a=range(0, self.amount_cells), size=self.amount_mines,
                                                      replace=False)
-        mine_indexes: list[tuple[np.int64, np.int64]] = []
+        mine_indexes: list[tuple[int, int]] = []
         for num in sample:
-            index: tuple[np.int64, np.int64] = num // self.height, num % self.width
+            index: tuple[int, int] = (num % self.width).item(), (num // self.width).item()
             x, y = index
-            self.board[x][y].value = -1
-            self.board[x][y].is_mine = True
+            self.get_cell(x, y).value = -1
+            self.get_cell(x, y).is_mine = True
             mine_indexes.append(index)
         return mine_indexes
 
@@ -35,5 +35,5 @@ class ClosedBoard(Board):
 
     def __str__(self) -> str:
         board_str: str = np.array2string(
-            np.asarray([[self.board[x][y].value for y in range(self.height)] for x in range(self.width)]))
+            np.asarray([[self.get_cell(x, y).value for x in range(self.width)] for y in range(self.height)]))
         return f"Width = {self.width} | Height = {self.height} | Amount of mines = {self.amount_mines}\n{board_str}"
