@@ -1,11 +1,8 @@
 import itertools
 from hypothesis import given, example, strategies as st
 from board_generation import generate_board, BoardTypes, OpenedBoard, MAX_LENGTH, OFFSETS
-from typing import Final, Callable
-
-EXPERT_BOARD: Final[OpenedBoard] = generate_board(width=30, height=16, amount_mines=99,
-                                                  board_type=BoardTypes.OPENED,
-                                                  start_cell=(0, 0))
+from typing import Callable
+from config import EXPERT_BOARD_OPENED
 
 
 @st.composite
@@ -22,7 +19,7 @@ def st_opened_board(draw: Callable[[st.SearchStrategy[int]], int]) -> OpenedBoar
 
 
 @given(st_opened_board())
-@example(EXPERT_BOARD)
+@example(EXPERT_BOARD_OPENED)
 def test_amount_mines(opened_board: OpenedBoard) -> None:
     counted_mines = sum(
         opened_board.get_cell(x, y).is_mine for x in range(opened_board.width) for y in range(opened_board.height))
@@ -30,7 +27,7 @@ def test_amount_mines(opened_board: OpenedBoard) -> None:
 
 
 @given(st_opened_board())
-@example(EXPERT_BOARD)
+@example(EXPERT_BOARD_OPENED)
 def test_start_cell_not_mine(opened_board: OpenedBoard) -> None:
     x, y = opened_board.start_cell
     assert not opened_board.get_cell(x, y).is_mine
@@ -47,14 +44,14 @@ def check_values(opened_board: OpenedBoard):
         neighboring_mines: int = 0
         for x_offset, y_offset in OFFSETS:
             neighbor_x, neighbor_y = x + x_offset, y + y_offset
-            if (0 <= neighbor_x < opened_board.width and 0 <= neighbor_y < opened_board.height
-                    and opened_board.get_cell(neighbor_x, neighbor_y).is_mine):
+            if 0 <= neighbor_x < opened_board.width and 0 <= neighbor_y < opened_board.height and opened_board.get_cell(
+                    neighbor_x, neighbor_y).is_mine:
                 neighboring_mines += 1
         assert neighboring_mines == current_cell.value
 
 
 @given(st_opened_board())
-@example(EXPERT_BOARD)
+@example(EXPERT_BOARD_OPENED)
 def test_values(opened_board: OpenedBoard) -> None:
     check_values(opened_board)
 

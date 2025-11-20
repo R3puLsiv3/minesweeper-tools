@@ -1,10 +1,8 @@
 import itertools
 from hypothesis import given, example, strategies as st
 from board_generation import generate_board, BoardTypes, ClosedBoard, MAX_LENGTH, OFFSETS
-from typing import Final, Callable
-
-EXPERT_BOARD: Final[ClosedBoard] = generate_board(width=30, height=16, amount_mines=99,
-                                                  board_type=BoardTypes.CLOSED)
+from typing import Callable
+from config import EXPERT_BOARD_CLOSED
 
 
 @st.composite
@@ -20,7 +18,7 @@ def st_closed_board(
 
 
 @given(st_closed_board())
-@example(EXPERT_BOARD)
+@example(EXPERT_BOARD_CLOSED)
 def test_amount_mines(closed_board: ClosedBoard) -> None:
     counted_mines = sum(
         closed_board.get_cell(x, y).is_mine for x in range(closed_board.width) for y in range(closed_board.height))
@@ -38,30 +36,14 @@ def check_values(closed_board: ClosedBoard):
         neighboring_mines: int = 0
         for x_offset, y_offset in OFFSETS:
             neighbor_x, neighbor_y = x + x_offset, y + y_offset
-            if (0 <= neighbor_x < closed_board.width and 0 <= neighbor_y < closed_board.height
-                    and closed_board.get_cell(neighbor_x, neighbor_y).is_mine):
+            if 0 <= neighbor_x < closed_board.width and 0 <= neighbor_y < closed_board.height and closed_board.get_cell(
+                    neighbor_x, neighbor_y).is_mine:
                 neighboring_mines += 1
         assert neighboring_mines == current_cell.value
 
 
 @given(st_closed_board())
-@example(EXPERT_BOARD)
-def test_values(closed_board: ClosedBoard) -> None:
-    for x, y in itertools.product(range(closed_board.width), range(closed_board.height)):
-        current_cell = closed_board.get_cell(x, y)
-        if current_cell.is_mine:
-            continue
-        neighboring_mines: int = 0
-        for x_offset, y_offset in OFFSETS:
-            neighbor_x, neighbor_y = x + x_offset, y + y_offset
-            if (0 <= neighbor_x < closed_board.width and 0 <= neighbor_y < closed_board.height
-                    and closed_board.get_cell(neighbor_x, neighbor_y).is_mine):
-                neighboring_mines += 1
-        assert neighboring_mines == current_cell.value
-
-
-@given(st_closed_board())
-@example(EXPERT_BOARD)
+@example(EXPERT_BOARD_CLOSED)
 def test_values(closed_board: ClosedBoard) -> None:
     check_values(closed_board)
 
