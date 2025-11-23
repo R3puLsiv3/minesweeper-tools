@@ -2,6 +2,7 @@ import numpy as np
 from numpy.random import Generator
 from dataclasses import dataclass
 from config import MAX_LENGTH, OFFSETS
+from typing import Iterator
 
 
 @dataclass
@@ -90,11 +91,9 @@ class Board:
             return
         cell.set_mine()
         self.amount_mines += 1
-        for x_offset, y_offset in OFFSETS:
-            neighbor_x, neighbor_y = x + x_offset, y + y_offset
-            if 0 <= neighbor_x < self.width and 0 <= neighbor_y < self.height and not self.get_cell(neighbor_x,
-                                                                                                    neighbor_y).is_mine:
-                self.get_cell(neighbor_x, neighbor_y).value += 1
+        for neighbor_cell in self.get_neighbors(cell):
+            if not neighbor_cell.is_mine:
+                neighbor_cell.value += 1
 
     def remove_mine(self, x: int, y: int) -> None:
         """
@@ -111,13 +110,26 @@ class Board:
             return
         cell.set_empty()
         self.amount_mines -= 1
+        for neighbor_cell in self.get_neighbors(cell):
+            if not neighbor_cell.is_mine:
+                neighbor_cell.value -= 1
+            else:
+                cell.value += 1
+
+    def get_neighbors(self, cell: Cell) -> Iterator[Cell]:
+        """
+        Generates the neighbors of a given cell.
+
+        :param cell: Cell whose neighbors are requested.
+        :type cell: Cell
+        :return: Iterator over the neighbors of the cell.
+        :rtype: Iterator[Cell]
+        """
         for x_offset, y_offset in OFFSETS:
-            neighbor_x, neighbor_y = x + x_offset, y + y_offset
+            neighbor_x, neighbor_y = cell.x + x_offset, cell.y + y_offset
             if 0 <= neighbor_x < self.width and 0 <= neighbor_y < self.height:
-                if not self.get_cell(neighbor_x, neighbor_y).is_mine:
-                    self.get_cell(neighbor_x, neighbor_y).value -= 1
-                else:
-                    cell.value += 1
+                neighbor_cell: Cell = self.get_cell(neighbor_x, neighbor_y)
+                yield neighbor_cell
 
     def __repr__(self) -> str:
         return f"Board(width={self.width}, height={self.height}, amount_mines={self.amount_mines})"

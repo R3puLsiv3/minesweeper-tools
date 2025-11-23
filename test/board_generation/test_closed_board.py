@@ -1,8 +1,13 @@
 import itertools
 from hypothesis import given, example, strategies as st
-from board_generation import generate_board, BoardTypes, ClosedBoard, MAX_LENGTH, OFFSETS
+from board_generation import generate_board, BoardTypes, ClosedBoard
 from typing import Callable
-from config import EXPERT_BOARD_CLOSED
+from typing import Final
+from config import MAX_LENGTH
+
+# An Expert closed board for testing.
+EXPERT_BOARD_CLOSED: Final[ClosedBoard] = generate_board(width=30, height=16, amount_mines=99,
+                                                         board_type=BoardTypes.CLOSED)
 
 
 @st.composite
@@ -34,10 +39,8 @@ def check_values(closed_board: ClosedBoard):
         if current_cell.is_mine:
             continue
         neighboring_mines: int = 0
-        for x_offset, y_offset in OFFSETS:
-            neighbor_x, neighbor_y = x + x_offset, y + y_offset
-            if 0 <= neighbor_x < closed_board.width and 0 <= neighbor_y < closed_board.height and closed_board.get_cell(
-                    neighbor_x, neighbor_y).is_mine:
+        for neighbor_cell in closed_board.get_neighbors(current_cell):
+            if neighbor_cell.is_mine:
                 neighboring_mines += 1
         assert neighboring_mines == current_cell.value
 
