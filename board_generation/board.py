@@ -3,6 +3,7 @@ from numpy.random import Generator
 from dataclasses import dataclass
 from config import MAX_LENGTH, OFFSETS
 from typing import Iterator
+from tabulate import tabulate
 
 
 @dataclass
@@ -28,13 +29,13 @@ class Cell:
     """
     x: int
     y: int
-    value: int = 0
+    value: int | None = 0
     is_mine: bool = False
     revealed: bool = False
     flagged: bool = False
 
     def set_mine(self) -> None:
-        self.value = -1
+        self.value = None
         self.is_mine = True
 
     def set_empty(self) -> None:
@@ -135,6 +136,8 @@ class Board:
         return f"Board(width={self.width}, height={self.height}, amount_mines={self.amount_mines})"
 
     def __str__(self) -> str:
-        board_str: str = np.array2string(
-            np.asarray([[self.get_cell(x, y).value for x in range(self.width)] for y in range(self.height)]))
+        board_str = tabulate(
+            [["X" if (val := self.get_cell(x, y).value) is None else val for x in range(self.width)] for y
+             in range(self.height)],
+            tablefmt="double_grid")
         return f"Width = {self.width} | Height = {self.height} | Amount of mines = {self.amount_mines}\n{board_str}"

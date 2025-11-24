@@ -1,8 +1,9 @@
 import itertools
 from hypothesis import given, example, strategies as st
-from board_generation import generate_board, BoardTypes, OpenedBoard, MAX_LENGTH
+from board_generation import generate_board, BoardTypes, OpenedBoard
 from typing import Callable
 from typing import Final
+from config import MAX_LENGTH
 
 # An Expert opened board for testing.
 EXPERT_BOARD_OPENED: Final[OpenedBoard] = generate_board(width=30, height=16, amount_mines=99,

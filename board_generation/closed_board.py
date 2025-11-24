@@ -16,7 +16,7 @@ class ClosedBoard(Board):
     :type amount_cells: int
     """
 
-    def __init__(self, width: int, height: int, amount_mines: int):
+    def __init__(self, width: int, height: int, amount_mines: int) -> None:
         super().__init__(width=width, height=height)
         amount_mines = max(0, min(amount_mines, self.amount_cells))
         self.__place_mines(amount_mines)

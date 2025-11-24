@@ -18,9 +18,9 @@ def generate_board(width: int, height: int, amount_mines: int = 0, board_type: B
     This is a board generator function that is intended as the user interface of the board generation package. Users
     can choose from four different Minesweeper boards:
         - An Editor Board which has no mines and where all the cells are revealed.
-        - A Closed Board which has no revealed cells.
-        - An Opened Board which has a revealed start cell.
-        - A No-Guess Board with a revealed start cell from which the board can be solved without guessing.
+        - A Closed Board which has no specified start cell.
+        - An Opened Board which has a specified start cell.
+        - A No-Guess Board with a specified start cell from which the board can be solved without guessing.
 
     :param width: Amount of tiles along the x-axis.
     :type width: int

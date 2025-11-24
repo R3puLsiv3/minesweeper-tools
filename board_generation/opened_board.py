@@ -18,7 +18,7 @@ class OpenedBoard(Board):
     :type start_cell: tuple[int, int]
     """
 
-    def __init__(self, width: int, height: int, amount_mines: int, start_cell: tuple[int, int]):
+    def __init__(self, width: int, height: int, amount_mines: int, start_cell: tuple[int, int]) -> None:
         super().__init__(width=width, height=height)
         self.start_cell: tuple[int, int] = start_cell
         self.start_x, self.start_y = self.start_cell

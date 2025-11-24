@@ -5,6 +5,9 @@ from gymnasium.core import ObsType
 from gymnasium.spaces import Discrete
 
 
+# TODO: Textual for console board output
+
+
 class EnvOpenBoardMinesweeper(gym.Env):
     metadata: dict[str, list[str]] = {"render_modes": ["human"]}
 
