@@ -2,9 +2,10 @@ import pygame
 from sys import exit
 from pygame import Surface
 from pygame.time import Clock
-from board_view import BoardView
-from board_model import BoardModel
+from board_view import BoardView, CellTypes
+from board_model import BoardModel, CellModel
 from board_generation import BoardTypes
+from config import OFFSETS
 
 
 class Minesweeper:
@@ -15,12 +16,14 @@ class Minesweeper:
         self.screen = None
 
         self.clock: Clock = pygame.time.Clock()
-        self.__tick_rate = 100
+        self.__tick_rate = 10000
 
-        self.board_model = BoardModel(5, 5, 3, BoardTypes.CLOSED)
-        self.board_view = BoardView(5, 5)
+        self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (0, 0))
+        self.board_view = BoardView(9, 9)
         self.width = self.board_view.width
         self.height = self.board_view.height
+        self.pushed_cell = None
+        self.chord_pushed_cells = []
 
         self.screen: Surface = pygame.display.set_mode(size=(self.width, self.height))
 
@@ -34,29 +37,93 @@ class Minesweeper:
                     pygame.quit()
                     exit()
 
+                # TODO: Always check if mouseclick is inside the window
+                self.__handle_pushed_empty_cell()
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = get_cell_index(event.pos)
-                    # self.board_view.draw_cell_pushed(x, y)
+
+                    if event.button == 1:
+                        pass
+
+                    if event.button == 3:
+                        if not self.board_model.is_revealed(x, y):
+                            if self.board_model.is_flagged(x, y):
+                                self.board_model.set_empty(x, y)
+                                self.board_view.draw_empty(x, y)
+                            else:
+                                self.board_model.set_flag(x, y)
+                                self.board_view.draw_flag(x, y)
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     x, y = get_cell_index(event.pos)
                     if event.button == 1:
-                        if opening := self.board_model.open(x, y):
-                            self.board_view.draw_opening(opening)
-                            if self.board_model.finished():
-                                pass
-                    if event.button == 3:
-                        if self.board_model.is_flagged(x, y):
-                            self.board_model.set_empty(x, y)
-                            self.board_view.draw_empty(x, y)
-                        else:
-                            self.board_model.set_flag(x, y)
-                            self.board_view.draw_flag(x, y)
+                        if not self.board_model.is_flagged(x, y):
+                            if (opening := self.board_model.open(x, y)) is None:
+                                number_cell_models, mine_cell_models, false_flag_cell_models = self.board_model.open_all()
+                                faulty_cell_model = self.board_model.faulty_cell_model
+                                self.board_view.draw_mine_explosion(faulty_cell_model.x, faulty_cell_model.y)
+                                self.board_view.draw(number_cell_models)
+                                self.board_view.draw(mine_cell_models, CellTypes.CELL_MINE)
+                                self.board_view.draw(false_flag_cell_models, CellTypes.CELL_MINE_FALSE)
+                            else:
+                                self.board_view.draw(opening)
+                                if self.board_model.finished():
+                                    _, mine_cell_models, _ = self.board_model.open_all()
+                                    for mine_cell_model in mine_cell_models:
+                                        self.board_view.draw_flag(mine_cell_model.x, mine_cell_model.y)
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (0, 0))
+                        self.board_view = BoardView(9, 9)
 
             self.screen.blit(self.board_view)
 
             pygame.display.update()
             self.clock.tick(self.__tick_rate)
+
+    def __handle_pushed_empty_cell(self) -> None:
+        x, y = get_cell_index(pygame.mouse.get_pos())
+        if 0 <= x < self.board_model.width and 0 <= y < self.board_model.height:
+            # If a previously pushed cell exists, check if another cell is pushed and reset the previously pushed cells.
+            if pygame.mouse.get_pressed()[0]:
+                if self.pushed_cell:
+                    old_x, old_y = self.pushed_cell
+                    # A new cell is being pushed.
+                    if (x, y) != (old_x, old_y):
+                        self.board_view.draw_empty(old_x, old_y)
+                        self.pushed_cell = None
+                    # The same cell is being pushed.
+                    else:
+                        return
+                if self.chord_pushed_cells:
+                    for neighbor_x, neighbor_y in self.chord_pushed_cells:
+                        self.board_view.draw_empty(neighbor_x, neighbor_y)
+                    self.chord_pushed_cells = []
+                # If an empty cell is pushed, set it to pushed.
+                if not self.board_model.is_flagged(x, y) and not self.board_model.is_revealed(x, y):
+                    self.pushed_cell = (x, y)
+                    self.board_view.draw_pushed(x, y)
+                # If a number cell is pushed set the empty neighbors to pushed.
+                if self.board_model.is_revealed(x, y) and self.board_model.get_value(x, y):
+                    for x_offset, y_offset in OFFSETS:
+                        neighbor_x, neighbor_y = x + x_offset, y + y_offset
+                        if 0 <= neighbor_x < self.board_model.width and 0 <= neighbor_y < self.board_model.height:
+                            if not self.board_model.is_revealed(neighbor_x,
+                                                                neighbor_y) and not self.board_model.is_flagged(
+                                neighbor_x, neighbor_y):
+                                self.chord_pushed_cells.append((neighbor_x, neighbor_y))
+                                self.board_view.draw_pushed(neighbor_x, neighbor_y)
+            # If no cell is pushed, reset the previously pushed cell.
+            else:
+                if self.pushed_cell:
+                    self.board_view.draw_empty(x, y)
+                    self.pushed_cell = None
+                if self.chord_pushed_cells:
+                    for neighbor_x, neighbor_y in self.chord_pushed_cells:
+                        self.board_view.draw_empty(neighbor_x, neighbor_y)
+                    self.chord_pushed_cells = []
 
 
 def get_cell_index(event_pos: tuple[int, int]):

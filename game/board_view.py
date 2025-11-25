@@ -58,11 +58,16 @@ class BoardView(Surface):
                 self.blit(cell_view.image,
                           dest=cell_view.rect)
 
-    def draw_opening(self, number_cells: list[CellModel]) -> None:
-        for cell_model in number_cells:
+    def draw(self, cell_models: list[CellModel], cell_type: CellTypes = None) -> None:
+        for cell_model in cell_models:
             cell_view = self.get_cell_view(cell_model.x, cell_model.y)
-            cell_view.image = self.__sprites[cell_model.value]
+            cell_view.image = self.__sprites[cell_model.value] if cell_type is None else self.__sprites[cell_type]
             cell_view.draw(self)
+
+    def draw_pushed(self, x: int, y: int) -> None:
+        cell_view_pushed = self.get_cell_view(x, y)
+        cell_view_pushed.image = self.__sprites[CellTypes.CELL_0]
+        cell_view_pushed.draw(self)
 
     def draw_flag(self, x: int, y: int) -> None:
         cell_view_flagged = self.get_cell_view(x, y)
@@ -74,10 +79,10 @@ class BoardView(Surface):
         cell_view_empty.image = self.__sprites[CellTypes.CELL_EMPTY]
         cell_view_empty.draw(self)
 
-    def draw_cell_pushed(self, x: int, y: int) -> None:
-        cell_view_pushed = self.get_cell_view(x, y)
-        cell_view_pushed.image = self.__sprites[CellTypes.CELL_0]
-        cell_view_pushed.draw(self)
+    def draw_mine_explosion(self, x: int, y: int) -> None:
+        cell_view_mine_explosion = self.get_cell_view(x, y)
+        cell_view_mine_explosion.image = self.__sprites[CellTypes.CELL_MINE_EXPLOSION]
+        cell_view_mine_explosion.draw(self)
 
     def get_cell_view(self, x: int, y: int) -> CellView:
         return self.__cell_views[y][x]

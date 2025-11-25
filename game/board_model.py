@@ -7,7 +7,7 @@ from board_generation import generate_board, BoardTypes, Cell, Board
 class CellModel:
     x: int
     y: int
-    value: int
+    value: int | None
 
 
 class BoardModel:
@@ -21,7 +21,7 @@ class BoardModel:
         self.height: int = height
         self.amount_mines: int = self.__board.amount_mines
         self.cells_to_open: int = self.__board.amount_cells - self.amount_mines
-        print(self.cells_to_open)
+        self.faulty_cell_model: CellModel | None = None
 
     def set_flag(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = True
@@ -37,8 +37,10 @@ class BoardModel:
     def is_revealed(self, x: int, y: int) -> bool:
         return self.__board.get_cell(x, y).revealed
 
+    def get_value(self, x: int, y: int) -> int:
+        return self.__board.get_cell(x, y).value
+
     def finished(self) -> bool:
-        print(self.cells_to_open)
         return self.cells_to_open == 0
 
     def open(self, x: int, y: int) -> None | list[CellModel]:
@@ -46,6 +48,8 @@ class BoardModel:
         if cell.revealed:
             return self.chord(x, y)
         if cell.is_mine:
+            cell.revealed = True
+            self.faulty_cell_model = CellModel(cell.x, cell.y, None)
             return None
         if cell.value == 0:
             return self.__expand(cell)
@@ -73,7 +77,7 @@ class BoardModel:
         self.cells_to_open -= len(opening)
         return opening
 
-    def chord(self, x: int, y: int) -> None | list[Cell]:
+    def chord(self, x: int, y: int) -> None | list[CellModel]:
         cell: Cell = self.__board.get_cell(x, y)
         neighbor_cells: list[Cell] = []
         amount_flags = 0
@@ -82,13 +86,33 @@ class BoardModel:
             if neighbor_cell.flagged:
                 amount_flags += 1
                 if not neighbor_cell.is_mine:
+                    self.faulty_cell_model = CellModel(neighbor_cell.x, neighbor_cell.y, None)
                     false_flag = True
             elif not neighbor_cell.revealed:
                 neighbor_cells.append(neighbor_cell)
-        opening: list[Cell] = []
+        opening: list[CellModel] = []
         if amount_flags == cell.value:
             if false_flag:
+                self.__board.get_cell(self.faulty_cell_model.x, self.faulty_cell_model.y).revealed = True
                 return None
             for neighbor_cell in neighbor_cells:
                 opening += self.open(neighbor_cell.x, neighbor_cell.y)
         return opening
+
+    def open_all(self) -> tuple[list[CellModel], list[CellModel], list[CellModel]]:
+        number_cell_models = []
+        mine_cell_models = []
+        false_flag_cell_models = []
+        for x in range(self.width):
+            for y in range(self.height):
+                current_cell = self.__board.get_cell(x, y)
+                if current_cell.revealed:
+                    continue
+                if current_cell.is_mine:
+                    mine_cell_models.append(CellModel(x, y, None))
+                    current_cell.revealed = True
+                elif current_cell.flagged:
+                    false_flag_cell_models.append(CellModel(x, y, None))
+                else:
+                    number_cell_models.append(CellModel(x, y, current_cell.value))
+        return number_cell_models, mine_cell_models, false_flag_cell_models
