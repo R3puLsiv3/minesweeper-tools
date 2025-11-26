@@ -54,9 +54,7 @@ class BoardView(Surface):
     def __draw_board(self) -> None:
         for x in range(self.board_width):
             for y in range(self.board_height):
-                cell_view = self.get_cell_view(x, y)
-                self.blit(cell_view.image,
-                          dest=cell_view.rect)
+                self.get_cell_view(x, y).draw(self)
 
     def draw(self, cell_models: list[CellModel], cell_type: CellTypes = None) -> None:
         for cell_model in cell_models:

@@ -19,17 +19,17 @@ class BoardModel:
                                              start_cell=start_cell)
         self.width: int = width
         self.height: int = height
-        self.amount_mines: int = self.__board.amount_mines
-        self.cells_to_open: int = self.__board.amount_cells - self.amount_mines
+        self.mines_to_flag: int = self.__board.amount_mines
+        self.cells_to_open: int = self.__board.amount_cells - self.mines_to_flag
         self.faulty_cell_model: CellModel | None = None
 
     def set_flag(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = True
-        self.amount_mines -= 1
+        self.mines_to_flag -= 1
 
     def set_empty(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = False
-        self.amount_mines += 1
+        self.mines_to_flag += 1
 
     def is_flagged(self, x: int, y: int) -> bool:
         return self.__board.get_cell(x, y).flagged
@@ -37,8 +37,18 @@ class BoardModel:
     def is_revealed(self, x: int, y: int) -> bool:
         return self.__board.get_cell(x, y).revealed
 
+    def is_opened(self) -> bool:
+        return self.cells_to_open != self.__board.amount_cells - self.mines_to_flag
+
     def get_value(self, x: int, y: int) -> int:
         return self.__board.get_cell(x, y).value
+
+    def get_flagged(self) -> list[CellModel]:
+        return [CellModel(x, y, None) for x in range(self.width) for y in range(self.height) if
+                self.__board.get_cell(x, y).flagged]
+
+    def get_amount_mines(self) -> int:
+        return self.__board.amount_mines
 
     def finished(self) -> bool:
         return self.cells_to_open == 0
