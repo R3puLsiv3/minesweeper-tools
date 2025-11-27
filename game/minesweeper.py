@@ -1,11 +1,13 @@
 import pygame
 from sys import exit
+
+import pygame_gui
 from pygame import Surface
 from pygame.time import Clock
 from board_view import BoardView, CellTypes
 from board_model import BoardModel, CellModel
 from board_generation import BoardTypes
-from config import OFFSETS
+from config import BOARD_BORDER
 
 
 class Minesweeper:
@@ -20,14 +22,22 @@ class Minesweeper:
 
         self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, start_cell=(0, 0))
         self.board_view = BoardView(9, 9)
-        self.width = self.board_view.width
-        self.height = self.board_view.height
-        self.pushed_cell = None
-        self.chord_pushed_cells = []
+
+        self.width = min(self.board_view.width + 200, pygame.display.Info().current_w)
+        self.height = min(self.board_view.height + 100, pygame.display.Info().current_h)
+
+        self.manager = pygame_gui.UIManager((self.width, self.height))
+
+        self.pushed_cells = []
+
+        self.text_input = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((50, 100), (50, 30)),
+                                                              manager=self.manager, object_id="#main_text_entry")
 
     def run(self) -> None:
         pygame.display.set_caption(self.name)
         self.screen: Surface = pygame.display.set_mode(size=(self.width, self.height))
+        self.board_view.set_position(self.screen.width - self.board_view.width - BOARD_BORDER, BOARD_BORDER)
+        self.screen.fill(color="gray30")
 
         while True:
             for event in pygame.event.get():
@@ -35,77 +45,66 @@ class Minesweeper:
                     pygame.quit()
                     exit()
 
+                self.manager.process_events(event)
+
                 self.__handle_pushed_cells()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    x, y = get_cell_index(event.pos)
-                    if event.button == 3:
+                    x_pos, y_pos = event.pos
+                    if event.button == 3 and self.board_view.clicked_cell(x_pos, y_pos):
+                        x, y = self.board_view.get_cell(x_pos, y_pos)
                         self.flag_cell(x, y)
 
                 if event.type == pygame.MOUSEBUTTONUP:
-                    x, y = get_cell_index(event.pos)
-                    if event.button == 1 and self.board_view.get_rect().collidepoint(
-                            event.pos) and not self.board_model.is_flagged(x, y):
-                        self.open_cell(x, y)
+                    x_pos, y_pos = event.pos
+                    if event.button == 1 and self.board_view.clicked_cell(x_pos, y_pos):
+                        x, y = self.board_view.get_cell(x_pos, y_pos)
+                        if not self.board_model.is_flagged(x, y):
+                            self.open_cell(x, y)
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.reset_board(0, 0)
 
-            self.screen.blit(self.board_view)
+            self.board_view.draw(self.screen)
+
+            self.manager.update(self.clock.tick(self.__tick_rate) / 1000)
+
+            self.manager.draw_ui(self.screen)
 
             pygame.display.update()
             self.clock.tick(self.__tick_rate)
 
     def __handle_pushed_cells(self) -> None:
-        x, y = pygame.mouse.get_pos()
-        if self.board_view.get_rect().collidepoint(x, y) and pygame.mouse.get_pressed()[0]:
-            x, y = get_cell_index((x, y))
-            # If a previously pushed cell exists, check if another cell is pushed and reset the previously pushed cells.
-            if self.pushed_cell:
-                old_x, old_y = self.pushed_cell
-                # A new cell is being pushed.
-                if (x, y) != (old_x, old_y):
-                    self.board_view.draw_empty(old_x, old_y)
-                    self.pushed_cell = None
-                # The same cell is being pushed.
-                else:
-                    return
-            if self.chord_pushed_cells:
-                for neighbor_x, neighbor_y in self.chord_pushed_cells:
-                    self.board_view.draw_empty(neighbor_x, neighbor_y)
-                self.chord_pushed_cells = []
-            # If an empty cell is pushed, set it to pushed.
+        x_pos, y_pos = pygame.mouse.get_pos()
+        if self.board_view.clicked_cell(x_pos, y_pos) and pygame.mouse.get_pressed()[0]:
+            self.__reset_cells()
+            x, y = self.board_view.get_cell(x_pos, y_pos)
             if not self.board_model.is_flagged(x, y) and not self.board_model.is_revealed(x, y):
-                self.pushed_cell = (x, y)
-                self.board_view.draw_pushed(x, y)
-            # If a number cell is pushed set the empty neighbors to pushed.
+                self.__push_cell(x, y)
             if self.board_model.is_revealed(x, y) and self.board_model.get_value(x, y):
-                for x_offset, y_offset in OFFSETS:
-                    neighbor_x, neighbor_y = x + x_offset, y + y_offset
-                    if 0 <= neighbor_x < self.board_model.width and 0 <= neighbor_y < self.board_model.height:
-                        if not self.board_model.is_revealed(neighbor_x,
-                                                            neighbor_y) and not self.board_model.is_flagged(
-                            neighbor_x, neighbor_y):
-                            self.chord_pushed_cells.append((neighbor_x, neighbor_y))
-                            self.board_view.draw_pushed(neighbor_x, neighbor_y)
-        # If no cell is pushed, reset the previously pushed cells.
-        else:
-            if self.pushed_cell:
-                x, y = self.pushed_cell
-                self.board_view.draw_empty(x, y)
-                self.pushed_cell = None
-            if self.chord_pushed_cells:
-                for neighbor_x, neighbor_y in self.chord_pushed_cells:
-                    self.board_view.draw_empty(neighbor_x, neighbor_y)
-                self.chord_pushed_cells = []
+                for neighbor in self.board_model.get_neighbors(x, y):
+                    if (not self.board_model.is_revealed(neighbor.x, neighbor.y)
+                            and not self.board_model.is_flagged(neighbor.x, neighbor.y)):
+                        self.__push_cell(neighbor.x, neighbor.y)
+        elif self.pushed_cells:
+            self.__reset_cells()
+
+    def __push_cell(self, x: int, y: int) -> None:
+        self.pushed_cells.append((x, y))
+        self.board_view.draw_pushed(x, y)
+
+    def __reset_cells(self) -> None:
+        for x, y in self.pushed_cells:
+            self.board_view.draw_empty(x, y)
+            self.pushed_cells = []
 
     def open_cell(self, x: int, y: int) -> None:
         if (opening := self.board_model.open(x, y)) is None:
             # If a mine is opened on the first try, create a new board with the start cell at that position.
             if not self.board_model.is_opened():
                 # Keep already placed flags on the board.
-                if self.board_model.mines_to_flag == self.board_model.get_amount_mines():
+                if self.board_model.mine_counter != self.board_model.get_amount_mines():
                     flagged_cell_models = self.board_model.get_flagged()
                     self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (x, y))
                     for cell_model in flagged_cell_models:
@@ -120,11 +119,11 @@ class Minesweeper:
                 number_cell_models, mine_cell_models, false_flag_cell_models = self.board_model.open_all()
                 faulty_cell_model = self.board_model.faulty_cell_model
                 self.board_view.draw_mine_explosion(faulty_cell_model.x, faulty_cell_model.y)
-                self.board_view.draw(number_cell_models)
-                self.board_view.draw(mine_cell_models, CellTypes.CELL_MINE)
-                self.board_view.draw(false_flag_cell_models, CellTypes.CELL_MINE_FALSE)
+                self.board_view.draw_cells(number_cell_models)
+                self.board_view.draw_cells(mine_cell_models, CellTypes.CELL_MINE)
+                self.board_view.draw_cells(false_flag_cell_models, CellTypes.CELL_FALSE_FLAG)
         else:
-            self.board_view.draw(opening)
+            self.board_view.draw_cells(opening)
             self.check_finished()
 
     def flag_cell(self, x: int, y: int) -> None:
@@ -145,11 +144,7 @@ class Minesweeper:
     def reset_board(self, x: int, y: int) -> None:
         self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (x, y))
         self.board_view = BoardView(9, 9)
-
-
-def get_cell_index(event_pos: tuple[int, int]):
-    x, y = event_pos
-    return x // 32, y // 32
+        self.board_view.set_position(self.screen.width - self.board_view.width - BOARD_BORDER, BOARD_BORDER)
 
 
 def main() -> None:

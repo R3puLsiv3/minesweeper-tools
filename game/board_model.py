@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from config import OFFSETS
 
 from board_generation import generate_board, BoardTypes, Cell, Board
 
@@ -7,7 +8,7 @@ from board_generation import generate_board, BoardTypes, Cell, Board
 class CellModel:
     x: int
     y: int
-    value: int | None
+    value: int | None = None
 
 
 class BoardModel:
@@ -19,17 +20,17 @@ class BoardModel:
                                              start_cell=start_cell)
         self.width: int = width
         self.height: int = height
-        self.mines_to_flag: int = self.__board.amount_mines
-        self.cells_to_open: int = self.__board.amount_cells - self.mines_to_flag
+        self.mine_counter: int = self.__board.amount_mines
+        self.cells_to_open: int = self.__board.amount_cells - self.mine_counter
         self.faulty_cell_model: CellModel | None = None
 
     def set_flag(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = True
-        self.mines_to_flag -= 1
+        self.mine_counter -= 1
 
     def set_empty(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = False
-        self.mines_to_flag += 1
+        self.mine_counter += 1
 
     def is_flagged(self, x: int, y: int) -> bool:
         return self.__board.get_cell(x, y).flagged
@@ -38,17 +39,24 @@ class BoardModel:
         return self.__board.get_cell(x, y).revealed
 
     def is_opened(self) -> bool:
-        return self.cells_to_open != self.__board.amount_cells - self.mines_to_flag
+        return self.cells_to_open != self.__board.amount_cells - self.__board.amount_mines
 
     def get_value(self, x: int, y: int) -> int:
         return self.__board.get_cell(x, y).value
 
     def get_flagged(self) -> list[CellModel]:
-        return [CellModel(x, y, None) for x in range(self.width) for y in range(self.height) if
+        return [CellModel(x, y) for x in range(self.width) for y in range(self.height) if
                 self.__board.get_cell(x, y).flagged]
 
     def get_amount_mines(self) -> int:
         return self.__board.amount_mines
+
+    def get_neighbors(self, x: int, y: int) -> list[CellModel]:
+        for x_offset, y_offset in OFFSETS:
+            neighbor_x, neighbor_y = x + x_offset, y + y_offset
+            if 0 <= neighbor_x < self.width and 0 <= neighbor_y < self.height:
+                neighbor_cell: CellModel = CellModel(neighbor_x, neighbor_y)
+                yield neighbor_cell
 
     def finished(self) -> bool:
         return self.cells_to_open == 0
@@ -79,11 +87,12 @@ class BoardModel:
                 if neighbor_cell.revealed or neighbor_cell.is_mine:
                     continue
                 neighbor_cell.revealed = True
+                if neighbor_cell.flagged:
+                    self.set_empty(neighbor_cell.x, neighbor_cell.y)
                 if neighbor_cell.value == 0:
                     queue.append(neighbor_cell)
                 else:
                     opening.append(CellModel(neighbor_cell.x, neighbor_cell.y, neighbor_cell.value))
-                    neighbor_cell.revealed = True
         self.cells_to_open -= len(opening)
         return opening
 
@@ -118,11 +127,12 @@ class BoardModel:
                 current_cell = self.__board.get_cell(x, y)
                 if current_cell.revealed:
                     continue
+                current_cell.revealed = True
                 if current_cell.is_mine:
-                    mine_cell_models.append(CellModel(x, y, None))
-                    current_cell.revealed = True
+                    mine_cell_models.append(CellModel(x, y))
                 elif current_cell.flagged:
-                    false_flag_cell_models.append(CellModel(x, y, None))
+                    false_flag_cell_models.append(CellModel(x, y))
                 else:
                     number_cell_models.append(CellModel(x, y, current_cell.value))
+        self.mine_counter = 0
         return number_cell_models, mine_cell_models, false_flag_cell_models

@@ -4,6 +4,7 @@ from board_model import CellModel
 from enum import IntEnum
 from pygame.transform import scale
 from config import CELL_LENGTH
+from config import BOARD_BORDER
 
 
 class CellTypes(IntEnum):
@@ -20,7 +21,7 @@ class CellTypes(IntEnum):
     CELL_EMPTY = 10
     CELL_FLAG = 11
     CELL_MINE_EXPLOSION = 12
-    CELL_MINE_FALSE = 13
+    CELL_FALSE_FLAG = 13
 
 
 class CellView(pygame.sprite.Sprite):
@@ -41,7 +42,11 @@ class BoardView(Surface):
     def __init__(self, board_width, board_height) -> None:
         self.cell_length = CELL_LENGTH
         screen_size = (board_width * self.cell_length, board_height * self.cell_length)
-        self.screen = super().__init__(size=screen_size)
+        super().__init__(size=screen_size)
+        self.top_left = None
+        self.top_right = None
+        self.bottom_left = None
+        self.bottom_right = None
         self.board_width = board_width
         self.board_height = board_height
         self.__load_sprites()
@@ -56,7 +61,25 @@ class BoardView(Surface):
             for y in range(self.board_height):
                 self.get_cell_view(x, y).draw(self)
 
-    def draw(self, cell_models: list[CellModel], cell_type: CellTypes = None) -> None:
+    def set_position(self, x: int, y: int):
+        self.top_left = x, y
+        self.top_right = x + self.width, y
+        self.bottom_left = x, y + self.height
+        self.bottom_right = x + self.width, y + self.height
+
+    def clicked_cell(self, x: int, y: int) -> bool:
+        x_left, y_top = self.top_left
+        x_right, y_bottom = self.bottom_right
+        return x_left <= x < x_right and y_top <= y < y_bottom
+
+    def get_cell(self, x: int, y: int):
+        x_left, y_top = self.top_left
+        return (x - x_left) // self.cell_length, (y - y_top) // self.cell_length
+
+    def draw(self, surface) -> None:
+        surface.blit(self, dest=self.top_left)
+
+    def draw_cells(self, cell_models: list[CellModel], cell_type: CellTypes = None) -> None:
         for cell_model in cell_models:
             cell_view = self.get_cell_view(cell_model.x, cell_model.y)
             cell_view.image = self.__sprites[cell_model.value] if cell_type is None else self.__sprites[cell_type]
@@ -84,9 +107,6 @@ class BoardView(Surface):
 
     def get_cell_view(self, x: int, y: int) -> CellView:
         return self.__cell_views[y][x]
-
-    def set_cell_length(self, length: int) -> None:
-        pass
 
     def __load_sprites(self) -> dict[int, Surface]:
         return {CellTypes.CELL_0: scale(surface=pygame.image.load("sprites/cell_0.png").convert(self),
@@ -116,5 +136,5 @@ class BoardView(Surface):
                 CellTypes.CELL_MINE_EXPLOSION: scale(
                     surface=pygame.image.load("sprites/cell_mine_explosion.png").convert(self),
                     size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_MINE_FALSE: scale(surface=pygame.image.load("sprites/tile_mine_false.png").convert(self),
+                CellTypes.CELL_FALSE_FLAG: scale(surface=pygame.image.load("sprites/cell_false_flag.png").convert(self),
                                                  size=(self.cell_length, self.cell_length))}

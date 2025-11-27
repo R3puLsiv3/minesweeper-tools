@@ -6,5 +6,7 @@ MAX_LENGTH: Final[int] = 100
 # Default size of a cell in Minesweeper game.
 CELL_LENGTH: Final[int] = 32
 
+BOARD_BORDER: Final[int] = 50
+
 # To help access neighboring cells quickly.
 OFFSETS: Final[list[tuple[int, int]]] = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]

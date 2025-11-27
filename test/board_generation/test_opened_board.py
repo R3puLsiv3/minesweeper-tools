@@ -62,15 +62,15 @@ def test_values(opened_board: OpenedBoard) -> None:
 
 @given(st_opened_board(), st.data())
 def test_values_after_place_mine(opened_board: OpenedBoard, data) -> None:
-    x: int = data.draw(st.integers(min_value=0, max_value=opened_board.width - 1))
-    y: int = data.draw(st.integers(min_value=0, max_value=opened_board.height - 1))
+    x: int = data.draw_cells(st.integers(min_value=0, max_value=opened_board.width - 1))
+    y: int = data.draw_cells(st.integers(min_value=0, max_value=opened_board.height - 1))
     opened_board.place_mine(x, y)
     check_values(opened_board)
 
 
 @given(st_opened_board(), st.data())
 def test_values_after_remove_mine(opened_board: OpenedBoard, data) -> None:
-    x: int = data.draw(st.integers(min_value=0, max_value=opened_board.width - 1))
-    y: int = data.draw(st.integers(min_value=0, max_value=opened_board.height - 1))
+    x: int = data.draw_cells(st.integers(min_value=0, max_value=opened_board.width - 1))
+    y: int = data.draw_cells(st.integers(min_value=0, max_value=opened_board.height - 1))
     opened_board.remove_mine(x, y)
     check_values(opened_board)
