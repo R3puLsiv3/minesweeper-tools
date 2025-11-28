@@ -6,13 +6,13 @@ from pygame import Surface
 from pygame.time import Clock
 from board_view import BoardView, CellTypes
 from board_model import BoardModel, CellModel
-from board_generation import BoardTypes
-from config import BOARD_BORDER
+from options_view import OptionsView
+from config import PADDING, OPTIONS_WIDTH, OPTIONS_HEIGHT, OPTIONS_X, OPTIONS_Y, BOARD_X, BOARD_Y, CELL_LENGTH
 
 
 class Minesweeper:
 
-    def __init__(self) -> None:
+    def __init__(self, board_width=9, board_height=9, amount_mines=10) -> None:
         pygame.init()
         self.name = "Minesweeper"
         self.screen = None
@@ -20,24 +20,21 @@ class Minesweeper:
         self.clock: Clock = pygame.time.Clock()
         self.__tick_rate = 200
 
-        self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, start_cell=(0, 0))
-        self.board_view = BoardView(9, 9)
+        self.board_model = BoardModel(board_width, board_height, amount_mines, start_cell=(0, 0))
+        board_view_width, board_view_height = board_width * CELL_LENGTH, board_height * CELL_LENGTH
+        self.board_view = BoardView(board_view_width, board_view_height)
+        self.options_view = None
 
-        self.width = min(self.board_view.width + 200, pygame.display.Info().current_w)
-        self.height = min(self.board_view.height + 100, pygame.display.Info().current_h)
-
-        self.manager = pygame_gui.UIManager((self.width, self.height))
+        self.width = min(BOARD_X + self.board_view.width + PADDING, pygame.display.Info().current_w)
+        self.height = min(BOARD_Y + self.board_view.height + PADDING, pygame.display.Info().current_h)
 
         self.pushed_cells = []
 
-        self.text_input = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((50, 100), (50, 30)),
-                                                              manager=self.manager, object_id="#main_text_entry")
-
     def run(self) -> None:
-        pygame.display.set_caption(self.name)
+
         self.screen: Surface = pygame.display.set_mode(size=(self.width, self.height))
-        self.board_view.set_position(self.screen.width - self.board_view.width - BOARD_BORDER, BOARD_BORDER)
-        self.screen.fill(color="gray30")
+        pygame.display.set_caption(self.name)
+        self.options_view = OptionsView(OPTIONS_WIDTH, OPTIONS_HEIGHT, pygame_gui.UIManager((self.width, self.height)))
 
         while True:
             for event in pygame.event.get():
@@ -45,7 +42,7 @@ class Minesweeper:
                     pygame.quit()
                     exit()
 
-                self.manager.process_events(event)
+                self.options_view.options_manager.process_events(event)
 
                 self.__handle_pushed_cells()
 
@@ -64,13 +61,15 @@ class Minesweeper:
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        self.reset_board(0, 0)
+                        self.reset_board(self.board_model.width, self.board_model.height,
+                                         self.board_model.get_amount_mines())
+
+            self.screen.fill(color="gray30")
 
             self.board_view.draw(self.screen)
 
-            self.manager.update(self.clock.tick(self.__tick_rate) / 1000)
-
-            self.manager.draw_ui(self.screen)
+            self.options_view.options_manager.update(self.clock.tick(self.__tick_rate) / 1000)
+            self.options_view.draw(self.screen)
 
             pygame.display.update()
             self.clock.tick(self.__tick_rate)
@@ -106,11 +105,13 @@ class Minesweeper:
                 # Keep already placed flags on the board.
                 if self.board_model.mine_counter != self.board_model.get_amount_mines():
                     flagged_cell_models = self.board_model.get_flagged()
-                    self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (x, y))
+                    self.board_model = BoardModel(self.board_model.width, self.board_model.height,
+                                                  self.board_model.get_amount_mines(), (x, y))
                     for cell_model in flagged_cell_models:
                         self.board_model.set_flag(cell_model.x, cell_model.y)
                 else:
-                    self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (x, y))
+                    self.board_model = BoardModel(self.board_model.width, self.board_model.height,
+                                                  self.board_model.get_amount_mines(), (x, y))
                 # Open the now guaranteed safe cell.
                 self.open_cell(x, y)
                 self.check_finished()
@@ -141,10 +142,10 @@ class Minesweeper:
             for mine_cell_model in mine_cell_models:
                 self.board_view.draw_flag(mine_cell_model.x, mine_cell_model.y)
 
-    def reset_board(self, x: int, y: int) -> None:
-        self.board_model = BoardModel(9, 9, 10, BoardTypes.OPENED, (x, y))
-        self.board_view = BoardView(9, 9)
-        self.board_view.set_position(self.screen.width - self.board_view.width - BOARD_BORDER, BOARD_BORDER)
+    def reset_board(self, board_width, board_height, amount_mines, start_cell=(0, 0)) -> None:
+        self.board_model = BoardModel(board_width, board_height, amount_mines, start_cell)
+        board_view_width, board_view_height = board_width * CELL_LENGTH, board_height * CELL_LENGTH
+        self.board_view = BoardView(board_view_width, board_view_height)
 
 
 def main() -> None:

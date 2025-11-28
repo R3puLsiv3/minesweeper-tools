@@ -3,8 +3,7 @@ from pygame import Surface
 from board_model import CellModel
 from enum import IntEnum
 from pygame.transform import scale
-from config import CELL_LENGTH
-from config import BOARD_BORDER
+from config import CELL_LENGTH, BOARD_X, BOARD_Y
 
 
 class CellTypes(IntEnum):
@@ -39,16 +38,14 @@ class CellView(pygame.sprite.Sprite):
 
 class BoardView(Surface):
 
-    def __init__(self, board_width, board_height) -> None:
+    def __init__(self, width, height) -> None:
         self.cell_length = CELL_LENGTH
-        screen_size = (board_width * self.cell_length, board_height * self.cell_length)
-        super().__init__(size=screen_size)
-        self.top_left = None
-        self.top_right = None
-        self.bottom_left = None
-        self.bottom_right = None
-        self.board_width = board_width
-        self.board_height = board_height
+        super().__init__(size=(width, height))
+        self.pos = (BOARD_X, BOARD_Y)
+        self.limit_right = BOARD_X + self.width
+        self.limit_bottom = BOARD_Y + self.height
+        self.board_width = width // self.cell_length
+        self.board_height = height // self.cell_length
         self.__load_sprites()
         self.__sprites = self.__load_sprites()
         self.__cell_views: list[list[CellView]] = [
@@ -56,28 +53,21 @@ class BoardView(Surface):
              range(self.board_width)] for y in range(self.board_height)]
         self.__draw_board()
 
+    def draw(self, surface) -> None:
+        surface.blit(self, dest=self.pos)
+
     def __draw_board(self) -> None:
         for x in range(self.board_width):
             for y in range(self.board_height):
                 self.get_cell_view(x, y).draw(self)
 
-    def set_position(self, x: int, y: int):
-        self.top_left = x, y
-        self.top_right = x + self.width, y
-        self.bottom_left = x, y + self.height
-        self.bottom_right = x + self.width, y + self.height
-
     def clicked_cell(self, x: int, y: int) -> bool:
-        x_left, y_top = self.top_left
-        x_right, y_bottom = self.bottom_right
-        return x_left <= x < x_right and y_top <= y < y_bottom
+        x_pos, y_pos = self.pos
+        return x_pos <= x < self.limit_right and y_pos <= y < self.limit_bottom
 
     def get_cell(self, x: int, y: int):
-        x_left, y_top = self.top_left
-        return (x - x_left) // self.cell_length, (y - y_top) // self.cell_length
-
-    def draw(self, surface) -> None:
-        surface.blit(self, dest=self.top_left)
+        x_pos, y_pos = self.pos
+        return (x - x_pos) // self.cell_length, (y - y_pos) // self.cell_length
 
     def draw_cells(self, cell_models: list[CellModel], cell_type: CellTypes = None) -> None:
         for cell_model in cell_models:

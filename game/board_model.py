@@ -13,10 +13,9 @@ class CellModel:
 
 class BoardModel:
 
-    def __init__(self, width: int, height: int, amount_mines: int, board_type: BoardTypes = BoardTypes.OPENED,
-                 start_cell: tuple[int, int] = (0, 0)) -> None:
+    def __init__(self, width: int, height: int, amount_mines: int, start_cell: tuple[int, int] = (0, 0)) -> None:
         self.__board: Board = generate_board(width=width, height=height, amount_mines=amount_mines,
-                                             board_type=board_type,
+                                             board_type=BoardTypes.OPENED,
                                              start_cell=start_cell)
         self.width: int = width
         self.height: int = height
