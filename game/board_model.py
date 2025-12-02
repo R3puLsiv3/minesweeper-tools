@@ -27,7 +27,7 @@ class BoardModel:
         self.__board.get_cell(x, y).flagged = True
         self.mine_counter -= 1
 
-    def set_empty(self, x: int, y: int) -> None:
+    def reset_flag(self, x: int, y: int) -> None:
         self.__board.get_cell(x, y).flagged = False
         self.mine_counter += 1
 
@@ -87,7 +87,7 @@ class BoardModel:
                     continue
                 neighbor_cell.revealed = True
                 if neighbor_cell.flagged:
-                    self.set_empty(neighbor_cell.x, neighbor_cell.y)
+                    self.reset_flag(neighbor_cell.x, neighbor_cell.y)
                 if neighbor_cell.value == 0:
                     queue.append(neighbor_cell)
                 else:

@@ -7,7 +7,7 @@ from pygame.time import Clock
 from board_view import BoardView, CellTypes
 from board_model import BoardModel, CellModel
 from options_view import OptionsView
-from config import PADDING, OPTIONS_WIDTH, OPTIONS_HEIGHT, OPTIONS_X, OPTIONS_Y, BOARD_X, BOARD_Y, CELL_LENGTH
+from config import PADDING, OPTIONS_WIDTH, OPTIONS_HEIGHT, BOARD_X, BOARD_Y, CELL_LENGTH
 
 
 class Minesweeper:
@@ -25,8 +25,8 @@ class Minesweeper:
         self.board_view = BoardView(board_view_width, board_view_height)
         self.options_view = None
 
-        self.width = min(BOARD_X + self.board_view.width + PADDING, pygame.display.Info().current_w)
-        self.height = min(BOARD_Y + self.board_view.height + PADDING, pygame.display.Info().current_h)
+        self.width = BOARD_X + self.board_view.width + PADDING
+        self.height = BOARD_Y + self.board_view.height + PADDING
 
         self.pushed_cells = []
 
@@ -34,7 +34,9 @@ class Minesweeper:
 
         self.screen: Surface = pygame.display.set_mode(size=(self.width, self.height))
         pygame.display.set_caption(self.name)
-        self.options_view = OptionsView(OPTIONS_WIDTH, OPTIONS_HEIGHT, pygame_gui.UIManager((self.width, self.height)))
+        self.options_view = OptionsView(OPTIONS_WIDTH, OPTIONS_HEIGHT, self.board_view.board_width,
+                                        self.board_view.board_height, self.board_model.get_amount_mines(),
+                                        pygame_gui.UIManager((self.width, self.height)))
 
         while True:
             for event in pygame.event.get():
@@ -51,6 +53,7 @@ class Minesweeper:
                     if event.button == 3 and self.board_view.clicked_cell(x_pos, y_pos):
                         x, y = self.board_view.get_cell(x_pos, y_pos)
                         self.flag_cell(x, y)
+                        self.options_view.update_mine_counter(self.board_model.mine_counter)
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     x_pos, y_pos = event.pos
@@ -63,6 +66,10 @@ class Minesweeper:
                     if event.key == pygame.K_SPACE:
                         self.reset_board(self.board_model.width, self.board_model.height,
                                          self.board_model.get_amount_mines())
+
+                if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                    width, height, amount_mines = self.options_view.get_board_data()
+                    self.reset_board(width, height, amount_mines)
 
             self.screen.fill(color="gray30")
 
@@ -130,7 +137,7 @@ class Minesweeper:
     def flag_cell(self, x: int, y: int) -> None:
         if not self.board_model.is_revealed(x, y):
             if self.board_model.is_flagged(x, y):
-                self.board_model.set_empty(x, y)
+                self.board_model.reset_flag(x, y)
                 self.board_view.draw_empty(x, y)
             else:
                 self.board_model.set_flag(x, y)
@@ -141,11 +148,16 @@ class Minesweeper:
             _, mine_cell_models, _ = self.board_model.open_all()
             for mine_cell_model in mine_cell_models:
                 self.board_view.draw_flag(mine_cell_model.x, mine_cell_model.y)
+        self.options_view.update_mine_counter(self.board_model.mine_counter)
 
     def reset_board(self, board_width, board_height, amount_mines, start_cell=(0, 0)) -> None:
         self.board_model = BoardModel(board_width, board_height, amount_mines, start_cell)
         board_view_width, board_view_height = board_width * CELL_LENGTH, board_height * CELL_LENGTH
         self.board_view = BoardView(board_view_width, board_view_height)
+        self.width = BOARD_X + self.board_view.width + PADDING
+        self.height = BOARD_Y + self.board_view.height + PADDING
+        self.screen: Surface = pygame.display.set_mode(size=(self.width, self.height))
+        self.options_view.update_mine_counter(self.board_model.mine_counter)
 
 
 def main() -> None:
