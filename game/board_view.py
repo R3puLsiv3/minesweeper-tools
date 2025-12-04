@@ -1,6 +1,9 @@
+import os
+import sys
+
 import pygame
 from pygame import Surface
-from board_model import CellModel
+from game.board_model import CellModel
 from enum import IntEnum
 from pygame.transform import scale
 from config import CELL_LENGTH, BOARD_X, BOARD_Y
@@ -36,6 +39,14 @@ class CellView(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 
+def get_path():
+    if getattr(sys, 'frozen', False):
+        path = sys._MEIPASS
+    else:
+        path = os.path.dirname(os.path.abspath(__file__))
+    return path
+
+
 class BoardView(Surface):
 
     def __init__(self, width, height) -> None:
@@ -46,6 +57,7 @@ class BoardView(Surface):
         self.limit_bottom = BOARD_Y + self.height
         self.board_width = width // self.cell_length
         self.board_height = height // self.cell_length
+        self.path = get_path()
         self.__load_sprites()
         self.__sprites = self.__load_sprites()
         self.__cell_views: list[list[CellView]] = [
@@ -99,32 +111,45 @@ class BoardView(Surface):
         return self.__cell_views[y][x]
 
     def __load_sprites(self) -> dict[int, Surface]:
-        return {CellTypes.CELL_0: scale(surface=pygame.image.load("sprites/cell_0.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_1: scale(surface=pygame.image.load("sprites/cell_1.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_2: scale(surface=pygame.image.load("sprites/cell_2.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_3: scale(surface=pygame.image.load("sprites/cell_3.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_4: scale(surface=pygame.image.load("sprites/cell_4.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_5: scale(surface=pygame.image.load("sprites/cell_5.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_6: scale(surface=pygame.image.load("sprites/cell_6.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_7: scale(surface=pygame.image.load("sprites/cell_7.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_8: scale(surface=pygame.image.load("sprites/cell_8.png").convert(self),
-                                        size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_MINE: scale(surface=pygame.image.load("sprites/cell_mine.png").convert(self),
-                                           size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_EMPTY: scale(surface=pygame.image.load("sprites/cell_empty.png").convert(self),
-                                            size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_FLAG: scale(surface=pygame.image.load("sprites/cell_flag.png").convert(self),
-                                           size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_MINE_EXPLOSION: scale(
-                    surface=pygame.image.load("sprites/cell_mine_explosion.png").convert(self),
-                    size=(self.cell_length, self.cell_length)),
-                CellTypes.CELL_FALSE_FLAG: scale(surface=pygame.image.load("sprites/cell_false_flag.png").convert(self),
-                                                 size=(self.cell_length, self.cell_length))}
+        return {CellTypes.CELL_0: pygame.transform.scale(
+            surface=pygame.image.load(self.path + "\\sprites/cell_0.png").convert(self),
+            size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_1: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_1.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_2: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_2.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_3: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_3.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_4: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_4.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_5: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_5.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_6: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_6.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_7: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_7.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_8: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_8.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_MINE: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_mine.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_EMPTY: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_empty.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_FLAG: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_flag.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_MINE_EXPLOSION: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_mine_explosion.png").convert(self),
+                size=(self.cell_length, self.cell_length)),
+            CellTypes.CELL_FALSE_FLAG: pygame.transform.scale(
+                surface=pygame.image.load(self.path + "\\sprites/cell_false_flag.png").convert(self),
+                size=(self.cell_length, self.cell_length))}

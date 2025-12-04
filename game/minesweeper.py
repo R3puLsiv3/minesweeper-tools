@@ -4,9 +4,9 @@ from sys import exit
 import pygame_gui
 from pygame import Surface
 from pygame.time import Clock
-from board_view import BoardView, CellTypes
-from board_model import BoardModel, CellModel
-from options_view import OptionsView
+from game.board_view import BoardView, CellTypes
+from game.board_model import BoardModel, CellModel
+from game.options_view import OptionsView
 from config import PADDING, OPTIONS_WIDTH, OPTIONS_HEIGHT, BOARD_X, BOARD_Y, CELL_LENGTH
 
 

@@ -1,1 +1,1 @@
-from minesweeper import Minesweeper
+from game.minesweeper import Minesweeper
